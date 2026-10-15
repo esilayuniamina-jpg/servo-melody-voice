@@ -3,86 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engine Igor Labs - Audio Unlock</title>
+    <title>Engine Igor Labs - Voice Assistant</title>
     <style>
         body {
             background-color: #050b14;
-            color: #fff;
-            font-family: sans-serif;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #38bdf8;
+            font-size: 1.3rem;
+            margin: 5px 0;
             text-align: center;
-            padding: 40px 20px;
         }
-        .btn {
-            background: #ef4444;
-            color: #fff;
-            font-size: 1.2rem;
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        #unlock-btn {
+            background: #22c55e;
+            color: #000;
             font-weight: bold;
-            padding: 20px 30px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 15px;
-            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
-            animation: pulse 1.5s infinite;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        .box {
+        #chat-container {
+            width: 100%;
+            max-width: 550px;
             background: #0f172a;
             border: 1px solid #1e293b;
-            padding: 25px;
             border-radius: 12px;
-            max-width: 400px;
-            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
+        #messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .msg {
+            padding: 10px 14px;
+            border-radius: 8px;
+            max-width: 85%;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .user-msg {
+            background: #0284c7;
+            color: #fff;
+            align-self: flex-end;
+        }
+        .bot-msg {
+            background: #1e293b;
+            color: #f8fafc;
+            align-self: flex-start;
+            border: 1px solid #334155;
+        }
+        #controls {
+            width: 100%;
+            max-width: 550px;
+            padding: 12px;
+            background: #0b1329;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            gap: 8px;
+            box-sizing: border-box;
+        }
+        input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #020617;
+            color: #fff;
+            outline: none;
+            font-size: 0.9rem;
+        }
+        input:focus { border-color: #38bdf8; }
+        button.send-btn {
+            padding: 10px 16px;
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button.send-btn:hover { background: #0369a1; }
     </style>
 </head>
 <body>
 
-    <div class="box" id="mainBox">
-        <h2>Engine Igor Labs</h2>
-        <p>Browser Anda memblokir audio otomatis. Sentuh tombol merah di bawah untuk membuka izin audio secara permanen:</p>
-        <button class="btn" onclick="unlockAndPlay()">IZINKAN & BUNYIKAN</button>
-        <p id="status" style="color: #facc15; margin-top: 15px;"></p>
+    <h1>Engine Igor Labs Animatronic</h1>
+    <div class="subtitle">Voice & Servo Control Center</div>
+
+    <!-- Tombol aktivasi audio agar browser tidak memblokir suara berikutnya -->
+    <button id="unlock-btn" onclick="initAudio()">🔊 AKTIFKAN AUDIO SYSTEM</button>
+
+    <div id="chat-container">
+        <div id="messages">
+            <div class="msg bot-msg">Sistem siap. Klik tombol hijau di atas sekali, lalu kirim pesan untuk mendengar balasan suara.</div>
+        </div>
+        <div id="controls">
+            <input type="text" id="userInput" placeholder="Ketik perintah..." onkeydown="if(event.key==='Enter') handleSend()">
+            <button class="send-btn" onclick="handleSend()">Kirim</button>
+        </div>
     </div>
 
     <script>
+        let audioUnlocked = false;
         let audioCtx = null;
 
-        function unlockAndPlay() {
-            let status = document.getElementById('status');
-            
+        function initAudio() {
             try {
-                // Inisialisasi AudioContext wajib di dalam event handler sentuhan langsung user
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Resume jika suspended (kebijakan browser mobile)
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
                 }
-
-                // Buat suara Beep sukses
-                let oscillator = audioCtx.createOscillator();
-                let gainNode = audioCtx.createGain();
-
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nada D5
-                gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.6); // Bunyi 0.6 detik
-
-                status.innerText = "✅ Audio Berhasil Dibuka & Berbunyi!";
-                document.getElementById('mainBox').style.borderColor = '#22c55e';
+                audioUnlocked = true;
+                
+                let btn = document.getElementById('unlock-btn');
+                btn.style.background = '#10b981';
+                btn.innerText = '✅ AUDIO AKTIF & SIAP';
+                
+                // Mainkan suara pendek tanda aktif
+                playBeep(600, 0.1);
+                speakText("Sistem suara Engine Igor Labs aktif.");
             } catch (e) {
-                status.innerText = "❌ Gagal: " + e.message;
+                console.error(e);
             }
+        }
+
+        // Fungsi Beep bantu untuk interaksi
+        function playBeep(freq, duration) {
+            if (!audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.frequency.value = freq;
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        // Fungsi Text-to-Speech menggunakan Web Speech API (Browser Native, Gratis, Cepat)
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) {
+                console.log("Browser tidak mendukung Speech Synthesis");
+                return;
+            }
+
+            // Hentikan suara sebelumnya jika masih mengantri
+            window.speechSynthesis.cancel();
+
+            let utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID'; // Bahasa Indonesia
+            utterance.rate = 1.0;     // Kecepatan normal
+            utterance.pitch = 1.0;    // Nada normal
+
+            // Coba pilih suara bahasa Indonesia jika tersedia di device
+            let voices = window.speechSynthesis.getVoices();
+            let idVoice = voices.find(v => v.lang === 'id-ID' || v.lang === 'id_ID' || v.lang.startsWith('id'));
+            if (idVoice) {
+                utterance.voice = idVoice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function handleSend() {
+            let input = document.getElementById('userInput');
+            let txt = input.value.trim();
+            if(!txt) return;
+
+            let box = document.getElementById('messages');
+            box.innerHTML += `<div class="msg user-msg">${txt}</div>`;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+
+            let reply = "Perintah " + txt + " berhasil diproses.";
+
+            setTimeout(() => {
+                box.innerHTML += `<div class="msg bot-msg">${reply}</div>`;
+                box.scrollTop = box.scrollHeight;
+
+                // Jika user belum klik tombol hijau, ingatkan
+                if (!audioUnlocked) {
+                    initAudio();
+                }
+
+                // Ucapkan balasan secara otomatis
+                speakText(reply);
+            }, 300);
+        }
+
+        // Preload voices
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                window.speechSynthesis.getVoices();
+            };
         }
     </script>
 </body>
