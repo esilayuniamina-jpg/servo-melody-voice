@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engine Igor Labs - Voice Assistant</title>
+    <title>Engine Igor Labs - AI Voice Chat</title>
     <style>
         body {
             background-color: #050b14;
@@ -30,7 +30,7 @@
             text-align: center;
         }
         #unlock-btn {
-            background: #38bdf8;
+            background: #22c55e;
             color: #000;
             font-weight: bold;
             padding: 12px 20px;
@@ -39,7 +39,7 @@
             cursor: pointer;
             margin-bottom: 15px;
             font-size: 0.95rem;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
         }
         #chat-container {
             width: 100%;
@@ -115,62 +115,77 @@
 <body>
 
     <h1>Engine Igor Labs Animatronic</h1>
-    <div class="subtitle">Device TTS Engine (Web Speech API)</div>
+    <div class="subtitle">Auto-Voice AI Response (Device TTS)</div>
 
-    <!-- Tombol aktivasi agar browser mengizinkan pemutaran suara device -->
-    <button id="unlock-btn" onclick="initDeviceTTS()">🔊 AKTIFKAN SUARA DEVICE</button>
+    <!-- Tombol aktivasi agar browser mengizinkan pemutaran suara otomatis -->
+    <button id="unlock-btn" onclick="initAudio()">🔊 KLIK SEKALI UNTUK AKTIFKAN SUARA OTOMATIS</button>
 
     <div id="chat-container">
         <div id="messages">
-            <div class="msg bot-msg">Sistem siap. Klik tombol di atas sekali, lalu kirim pesan untuk mendengar suara dari device kamu.</div>
+            <div class="msg bot-msg">Halo! Setiap jawaban saya akan otomatis dibacakan oleh suara device kamu. Klik tombol hijau di atas dulu ya!</div>
         </div>
         <div id="controls">
-            <input type="text" id="userInput" placeholder="Ketik perintah..." onkeydown="if(event.key==='Enter') handleSend()">
+            <input type="text" id="userInput" placeholder="Ketik pesan atau tanyakan sesuatu..." onkeydown="if(event.key==='Enter') handleSend()">
             <button class="send-btn" onclick="handleSend()">Kirim</button>
         </div>
     </div>
 
     <script>
-        let ttsReady = false;
+        let isAudioUnlocked = false;
 
-        function initDeviceTTS() {
+        function initAudio() {
             if (!('speechSynthesis' in window)) {
-                alert("Maaf, browser ini tidak mendukung TTS bawaan device.");
+                alert("Browser tidak mendukung TTS device.");
                 return;
             }
 
-            // Pancing engine TTS device dengan mengucapkan teks kosong / sapaan singkat
-            let utterance = new SpeechSynthesisUtterance("Sistem suara device diaktifkan.");
-            utterance.lang = 'id-ID';
-            utterance.rate = 1.0;
-            
-            window.speechSynthesis.cancel();
+            // Pancing engine TTS device dengan mengucapkan teks kosong
+            let utterance = new SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(utterance);
             
-            ttsReady = true;
+            isAudioUnlocked = true;
             let btn = document.getElementById('unlock-btn');
             btn.style.background = '#10b981';
-            btn.innerText = '✅ SUARA DEVICE AKTIF';
+            btn.innerText = '✅ SUARA OTOMATIS AKTIF';
         }
 
-        function speakDeviceTTS(text) {
+        // Fungsi untuk membacakan teks secara otomatis
+        function speakResponse(text) {
             if (!('speechSynthesis' in window)) return;
 
-            window.speechSynthesis.cancel(); // Hentikan suara sebelumnya
+            // Batalkan suara sebelumnya agar tidak bertumpuk
+            window.speechSynthesis.cancel();
 
             let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Menggunakan suara bahasa Indonesia bawaan HP/Device
+            utterance.lang = 'id-ID'; // Bahasa Indonesia
             utterance.rate = 1.0;     // Kecepatan normal
             utterance.pitch = 1.0;    // Nada suara
 
-            // Coba ambil suara bahasa Indonesia yang tersedia di device
+            // Pilih suara Indonesia terbaik di device jika ada
             let voices = window.speechSynthesis.getVoices();
-            let indoVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID') || v.name.toLowerCase().includes('indonesian'));
+            let indoVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
             if (indoVoice) {
                 utterance.voice = indoVoice;
             }
 
             window.speechSynthesis.speak(utterance);
+        }
+
+        // Simulasi kecerdasan respon bot AI
+        function getBotReply(userText) {
+            let text = userText.toLowerCase();
+            
+            if (text.includes('halo') || text.includes('hai')) {
+                return "Halo juga! Ada yang bisa saya bantu terkait proyek servo melodi hari ini?";
+            } else if (text.includes('servo') || text.includes('motor')) {
+                return "Sistem pengendali servo di Engine Igor Labs siap dihubungkan ke mikrokontroler.";
+            } else if (text.includes('melodi') || text.includes('musik') || text.includes('lagu')) {
+                return "Modul melodi dirancang untuk menyelaraskan gerakan animatronic puppet dengan ritme audio.";
+            } else if (text.includes('siapa kamu')) {
+                return "Saya adalah asisten virtual cerdas untuk proyek Engine Igor Labs Animatronic Puppet.";
+            } else {
+                return "Perintah '" + userText + "' telah diterima dan diproses oleh sistem.";
+            }
         }
 
         function handleSend() {
@@ -179,27 +194,35 @@
             if(!txt) return;
 
             let box = document.getElementById('messages');
-            box.innerHTML += `<div class="msg user-msg">${txt}</div>`;
+            
+            // 1. Tampilkan pesan user di chat box
+            box.innerHTML += `<div class="msg user-msg">${escapeHtml(txt)}</div>`;
             input.value = '';
             box.scrollTop = box.scrollHeight;
 
-            let reply = "Perintah " + txt + " diterima oleh sistem Engine Igor Labs.";
+            // 2. Buat respon bot AI secara otomatis berdasarkan teks user
+            let botReply = getBotReply(txt);
 
             setTimeout(() => {
-                box.innerHTML += `<div class="msg bot-msg">${reply}</div>`;
+                // Tampilkan respon bot di chat box
+                box.innerHTML += `<div class="msg bot-msg">${escapeHtml(botReply)}</div>`;
                 box.scrollTop = box.scrollHeight;
 
-                // Jika belum klik tombol aktifkan, panggil otomatis
-                if (!ttsReady) {
-                    initDeviceTTS();
+                // Jika user lupa klik tombol hijau, otomatis aktifkan
+                if (!isAudioUnlocked) {
+                    initAudio();
                 }
 
-                // Ucapkan menggunakan TTS bawaan device
-                speakDeviceTTS(reply);
-            }, 300);
+                // 3. OTOMATIS UCAPKAN JAWABAN BOT DENGAN TTS DEVICE!
+                speakResponse(botReply);
+            }, 400);
         }
 
-        // Preload daftar suara device
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Preload voices
         if ('speechSynthesis' in window) {
             window.speechSynthesis.onvoiceschanged = function() {
                 window.speechSynthesis.getVoices();
