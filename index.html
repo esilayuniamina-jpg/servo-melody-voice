@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engine Igor Labs - Audio Test</title>
+    <title>Engine Igor Labs - Audio Unlock</title>
     <style>
         body {
             background-color: #050b14;
@@ -13,21 +13,28 @@
             padding: 40px 20px;
         }
         .btn {
-            background: #38bdf8;
-            color: #000;
+            background: #ef4444;
+            color: #fff;
             font-size: 1.2rem;
             font-weight: bold;
-            padding: 15px 30px;
+            padding: 20px 30px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             margin: 15px;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         .box {
             background: #0f172a;
             border: 1px solid #1e293b;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 12px;
             max-width: 400px;
             margin: 0 auto;
         }
@@ -35,36 +42,46 @@
 </head>
 <body>
 
-    <div class="box">
+    <div class="box" id="mainBox">
         <h2>Engine Igor Labs</h2>
-        <p>Test Audio Bip / Tone</p>
-        <button class="btn" onclick="playBeep()">BUNYIKAN BEEP</button>
+        <p>Browser Anda memblokir audio otomatis. Sentuh tombol merah di bawah untuk membuka izin audio secara permanen:</p>
+        <button class="btn" onclick="unlockAndPlay()">IZINKAN & BUNYIKAN</button>
         <p id="status" style="color: #facc15; margin-top: 15px;"></p>
     </div>
 
     <script>
-        function playBeep() {
+        let audioCtx = null;
+
+        function unlockAndPlay() {
             let status = document.getElementById('status');
+            
             try {
-                // Menggunakan Web Audio API murni untuk menghasilkan suara BEEP (Sine Wave)
-                // Ini 100% jalan di semua browser tanpa butuh file eksternal atau koneksi internet
-                let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                // Inisialisasi AudioContext wajib di dalam event handler sentuhan langsung user
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Resume jika suspended (kebijakan browser mobile)
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                // Buat suara Beep sukses
                 let oscillator = audioCtx.createOscillator();
                 let gainNode = audioCtx.createGain();
 
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // Frekuensi A4 (440Hz)
-                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nada D5
+                gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
 
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
 
                 oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.5); // Bunyi selama 0.5 detik
+                oscillator.stop(audioCtx.currentTime + 0.6); // Bunyi 0.6 detik
 
-                status.innerText = "🔊 Beep berbunyi!";
+                status.innerText = "✅ Audio Berhasil Dibuka & Berbunyi!";
+                document.getElementById('mainBox').style.borderColor = '#22c55e';
             } catch (e) {
-                status.innerText = "❌ Error: " + e.message;
+                status.innerText = "❌ Gagal: " + e.message;
             }
         }
     </script>
