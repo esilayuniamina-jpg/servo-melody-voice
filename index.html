@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engine Igor Labs - AI Voice Chat</title>
+    <title>Engine Igor Labs - Cloud AI Voice Chat</title>
+    <!-- Firebase SDK (Realtime Database) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
         body {
             background-color: #050b14;
@@ -115,114 +118,105 @@
 <body>
 
     <h1>Engine Igor Labs Animatronic</h1>
-    <div class="subtitle">Auto-Voice AI Response (Device TTS)</div>
+    <div class="subtitle">Cloud Realtime Sync (Firebase Powered)</div>
 
-    <!-- Tombol aktivasi agar browser mengizinkan pemutaran suara otomatis -->
-    <button id="unlock-btn" onclick="initAudio()">🔊 KLIK SEKALI UNTUK AKTIFKAN SUARA OTOMATIS</button>
+    <button id="unlock-btn" onclick="initAudio()">🔊 KLIK SEKALI UNTUK AKTIFKAN SUARA</button>
 
     <div id="chat-container">
         <div id="messages">
-            <div class="msg bot-msg">Halo! Setiap jawaban saya akan otomatis dibacakan oleh suara device kamu. Klik tombol hijau di atas dulu ya!</div>
+            <div class="msg bot-msg">Menghubungkan ke Cloud Database...</div>
         </div>
         <div id="controls">
-            <input type="text" id="userInput" placeholder="Ketik pesan atau tanyakan sesuatu..." onkeydown="if(event.key==='Enter') handleSend()">
-            <button class="send-btn" onclick="handleSend()">Kirim</button>
+            <input type="text" id="userInput" placeholder="Ketik pesan..." onkeydown="if(event.key==='Enter') sendMessage()">
+            <button class="send-btn" onclick="sendMessage()">Kirim</button>
         </div>
     </div>
 
     <script>
+        // Konfigurasi Firebase Realtime Database (Gratis & Realtime)
+        const firebaseConfig = {
+            databaseURL: "https://servo-melody-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         let isAudioUnlocked = false;
 
         function initAudio() {
-            if (!('speechSynthesis' in window)) {
-                alert("Browser tidak mendukung TTS device.");
-                return;
-            }
-
-            // Pancing engine TTS device dengan mengucapkan teks kosong
+            if (!('speechSynthesis' in window)) return;
             let utterance = new SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(utterance);
-            
             isAudioUnlocked = true;
             let btn = document.getElementById('unlock-btn');
             btn.style.background = '#10b981';
-            btn.innerText = '✅ SUARA OTOMATIS AKTIF';
+            btn.innerText = '✅ SUARA CLOUD AKTIF';
         }
 
-        // Fungsi untuk membacakan teks secara otomatis
-        function speakResponse(text) {
+        function speakText(text) {
             if (!('speechSynthesis' in window)) return;
-
-            // Batalkan suara sebelumnya agar tidak bertumpuk
             window.speechSynthesis.cancel();
-
             let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Bahasa Indonesia
-            utterance.rate = 1.0;     // Kecepatan normal
-            utterance.pitch = 1.0;    // Nada suara
-
-            // Pilih suara Indonesia terbaik di device jika ada
+            utterance.lang = 'id-ID';
+            utterance.rate = 1.0;
+            
             let voices = window.speechSynthesis.getVoices();
             let indoVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
-            if (indoVoice) {
-                utterance.voice = indoVoice;
-            }
+            if (indoVoice) utterance.voice = indoVoice;
 
             window.speechSynthesis.speak(utterance);
         }
 
-        // Simulasi kecerdasan respon bot AI
-        function getBotReply(userText) {
-            let text = userText.toLowerCase();
-            
-            if (text.includes('halo') || text.includes('hai')) {
-                return "Halo juga! Ada yang bisa saya bantu terkait proyek servo melodi hari ini?";
-            } else if (text.includes('servo') || text.includes('motor')) {
-                return "Sistem pengendali servo di Engine Igor Labs siap dihubungkan ke mikrokontroler.";
-            } else if (text.includes('melodi') || text.includes('musik') || text.includes('lagu')) {
-                return "Modul melodi dirancang untuk menyelaraskan gerakan animatronic puppet dengan ritme audio.";
-            } else if (text.includes('siapa kamu')) {
-                return "Saya adalah asisten virtual cerdas untuk proyek Engine Igor Labs Animatronic Puppet.";
-            } else {
-                return "Perintah '" + userText + "' telah diterima dan diproses oleh sistem.";
-            }
-        }
-
-        function handleSend() {
-            let input = document.getElementById('userInput');
-            let txt = input.value.trim();
-            if(!txt) return;
-
+        // Pantau database secara real-time (jika ada pesan baru dari terminal/cloud, otomatis tampil & bersuara!)
+        const messagesRef = db.ref('chat_messages');
+        messagesRef.on('child_added', (snapshot) => {
+            let data = snapshot.val();
             let box = document.getElementById('messages');
             
-            // 1. Tampilkan pesan user di chat box
-            box.innerHTML += `<div class="msg user-msg">${escapeHtml(txt)}</div>`;
-            input.value = '';
+            // Hapus teks loading awal jika ada
+            if(box.children.length === 1 && box.children[0].innerText.includes('Menghubungkan')) {
+                box.innerHTML = '';
+            }
+
+            let msgClass = data.sender === 'user' ? 'user-msg' : 'bot-msg';
+            box.innerHTML += `<div class="msg ${msgClass}">${escapeHtml(data.text)}</div>`;
             box.scrollTop = box.scrollHeight;
 
-            // 2. Buat respon bot AI secara otomatis berdasarkan teks user
-            let botReply = getBotReply(txt);
+            // Jika pesan dari bot, otomatis putar suara di device!
+            if (data.sender === 'bot') {
+                if (!isAudioUnlocked) initAudio();
+                speakText(data.text);
+            }
+        });
 
+        function sendMessage() {
+            let input = document.getElementById('userInput');
+            let txt = input.value.trim();
+            if (!txt) return;
+
+            // Kirim pesan user ke Cloud Database
+            messagesRef.push({
+                sender: 'user',
+                text: txt,
+                timestamp: Date.now()
+            });
+
+            input.value = '';
+
+            // Simulasi bot otomatis membalas via Cloud setelah 1 detik
             setTimeout(() => {
-                // Tampilkan respon bot di chat box
-                box.innerHTML += `<div class="msg bot-msg">${escapeHtml(botReply)}</div>`;
-                box.scrollTop = box.scrollHeight;
-
-                // Jika user lupa klik tombol hijau, otomatis aktifkan
-                if (!isAudioUnlocked) {
-                    initAudio();
-                }
-
-                // 3. OTOMATIS UCAPKAN JAWABAN BOT DENGAN TTS DEVICE!
-                speakResponse(botReply);
-            }, 400);
+                let botReply = "Respon cloud untuk: " + txt;
+                messagesRef.push({
+                    sender: 'bot',
+                    text: botReply,
+                    timestamp: Date.now()
+                });
+            }, 800);
         }
 
         function escapeHtml(text) {
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        // Preload voices
         if ('speechSynthesis' in window) {
             window.speechSynthesis.onvoiceschanged = function() {
                 window.speechSynthesis.getVoices();
