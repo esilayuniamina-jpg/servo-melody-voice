@@ -108,7 +108,7 @@
 
     <div id="chat-container">
         <div id="chat-messages">
-            <div class="message bot-message">Halo! Saya asisten suara Engine Igor Labs. Ada yang bisa saya bantu terkait servo atau melodi hari ini?</div>
+            <div class="message bot-message">Halo! Saya asisten suara Engine Igor Labs. Ketik sesuatu untuk mulai mengobrol.</div>
         </div>
         <div id="input-container">
             <input type="text" id="user-input" placeholder="Ketik pesan di sini..." onkeypress="handleKeyPress(event)">
@@ -117,23 +117,35 @@
     </div>
 
     <script>
-        // Fungsi Text-to-Speech (Browser Web Speech API)
+        // Fungsi Text-to-Speech yang dipaksa aktif di browser mobile/desktop
         function bersuara(teks) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Hentikan suara sebelumnya jika ada
+                window.speechSynthesis.cancel();
+                
                 let utterance = new SpeechSynthesisUtterance(teks);
                 utterance.lang = 'id-ID'; // Bahasa Indonesia
                 utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+
+                // Pastikan voice Indonesia terpilih jika ada
+                let voices = window.speechSynthesis.getVoices();
+                let indoVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+                if (indoVoice) {
+                    utterance.voice = indoVoice;
+                }
+
                 window.speechSynthesis.speak(utterance);
+            } else {
+                console.log("Browser tidak mendukung Speech Synthesis.");
             }
         }
 
-        // Ucapkan sapaan awal saat halaman pertama kali dibuka (opsional/interaksi pertama)
-        window.onload = function() {
-            setTimeout(() => {
-                bersuara("Halo! Saya asisten suara Engine Igor Labs. Ada yang bisa saya bantu?");
-            }, 1000);
-        };
+        // Muat voices di awal (beberapa browser butuh event onvoiceschanged)
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                window.speechSynthesis.getVoices();
+            };
+        }
 
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
@@ -157,20 +169,18 @@
             inputField.value = '';
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // 2. Simulasi respon bot berdasarkan input
-            setTimeout(() => {
-                let responBot = "Baik, saya akan memproses perintah untuk " + pesanUser + " sekarang.";
-                
-                let botDiv = document.createElement('div');
-                botDiv.className = 'message bot-message';
-                botDiv.textContent = responBot;
-                chatMessages.appendChild(botDiv);
-                
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+            // 2. Respon bot
+            let responBot = "Baik, saya mengerti perintah " + pesanUser + ". Sistem servo dan melodi siap dijalankan.";
+            
+            let botDiv = document.createElement('div');
+            botDiv.className = 'message bot-message';
+            botDiv.textContent = responBot;
+            chatMessages.appendChild(botDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
 
-                // 3. Panggil fungsi suara di background secara otomatis!
-                bersuara(responBot);
-            }, 500);
+            // 3. Panggil suara langsung di dalam fungsi klik user (agar lolos blokir browser)
+            bersuara(responBot);
         }
     </script>
 </body>
