@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engine Igor Labs - Audio Test</title>
+    <style>
+        body {
+            background-color: #050b14;
+            color: #fff;
+            font-family: sans-serif;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .btn {
+            background: #38bdf8;
+            color: #000;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 15px;
+        }
+        .box {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Engine Igor Labs</h2>
+        <p>Test Audio Bip / Tone</p>
+        <button class="btn" onclick="playBeep()">BUNYIKAN BEEP</button>
+        <p id="status" style="color: #facc15; margin-top: 15px;"></p>
+    </div>
+
+    <script>
+        function playBeep() {
+            let status = document.getElementById('status');
+            try {
+                // Menggunakan Web Audio API murni untuk menghasilkan suara BEEP (Sine Wave)
+                // Ini 100% jalan di semua browser tanpa butuh file eksternal atau koneksi internet
+                let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                let oscillator = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // Frekuensi A4 (440Hz)
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5); // Bunyi selama 0.5 detik
+
+                status.innerText = "🔊 Beep berbunyi!";
+            } catch (e) {
+                status.innerText = "❌ Error: " + e.message;
+            }
+        }
+    </script>
+</body>
+</html>
