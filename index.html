@@ -30,7 +30,7 @@
             text-align: center;
         }
         #unlock-btn {
-            background: #22c55e;
+            background: #38bdf8;
             color: #000;
             font-weight: bold;
             padding: 12px 20px;
@@ -39,7 +39,7 @@
             cursor: pointer;
             margin-bottom: 15px;
             font-size: 0.95rem;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
         }
         #chat-container {
             width: 100%;
@@ -115,14 +115,14 @@
 <body>
 
     <h1>Engine Igor Labs Animatronic</h1>
-    <div class="subtitle">Voice & Servo Control Center</div>
+    <div class="subtitle">Device TTS Engine (Web Speech API)</div>
 
-    <!-- Tombol aktivasi audio agar browser tidak memblokir suara berikutnya -->
-    <button id="unlock-btn" onclick="initAudio()">🔊 AKTIFKAN AUDIO SYSTEM</button>
+    <!-- Tombol aktivasi agar browser mengizinkan pemutaran suara device -->
+    <button id="unlock-btn" onclick="initDeviceTTS()">🔊 AKTIFKAN SUARA DEVICE</button>
 
     <div id="chat-container">
         <div id="messages">
-            <div class="msg bot-msg">Sistem siap. Klik tombol hijau di atas sekali, lalu kirim pesan untuk mendengar balasan suara.</div>
+            <div class="msg bot-msg">Sistem siap. Klik tombol di atas sekali, lalu kirim pesan untuk mendengar suara dari device kamu.</div>
         </div>
         <div id="controls">
             <input type="text" id="userInput" placeholder="Ketik perintah..." onkeydown="if(event.key==='Enter') handleSend()">
@@ -131,63 +131,43 @@
     </div>
 
     <script>
-        let audioUnlocked = false;
-        let audioCtx = null;
+        let ttsReady = false;
 
-        function initAudio() {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                audioUnlocked = true;
-                
-                let btn = document.getElementById('unlock-btn');
-                btn.style.background = '#10b981';
-                btn.innerText = '✅ AUDIO AKTIF & SIAP';
-                
-                // Mainkan suara pendek tanda aktif
-                playBeep(600, 0.1);
-                speakText("Sistem suara Engine Igor Labs aktif.");
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        // Fungsi Beep bantu untuk interaksi
-        function playBeep(freq, duration) {
-            if (!audioCtx) return;
-            try {
-                let osc = audioCtx.createOscillator();
-                let gain = audioCtx.createGain();
-                osc.frequency.value = freq;
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch(e) {}
-        }
-
-        // Fungsi Text-to-Speech menggunakan Web Speech API (Browser Native, Gratis, Cepat)
-        function speakText(text) {
+        function initDeviceTTS() {
             if (!('speechSynthesis' in window)) {
-                console.log("Browser tidak mendukung Speech Synthesis");
+                alert("Maaf, browser ini tidak mendukung TTS bawaan device.");
                 return;
             }
 
-            // Hentikan suara sebelumnya jika masih mengantri
+            // Pancing engine TTS device dengan mengucapkan teks kosong / sapaan singkat
+            let utterance = new SpeechSynthesisUtterance("Sistem suara device diaktifkan.");
+            utterance.lang = 'id-ID';
+            utterance.rate = 1.0;
+            
             window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+            
+            ttsReady = true;
+            let btn = document.getElementById('unlock-btn');
+            btn.style.background = '#10b981';
+            btn.innerText = '✅ SUARA DEVICE AKTIF';
+        }
+
+        function speakDeviceTTS(text) {
+            if (!('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel(); // Hentikan suara sebelumnya
 
             let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Bahasa Indonesia
+            utterance.lang = 'id-ID'; // Menggunakan suara bahasa Indonesia bawaan HP/Device
             utterance.rate = 1.0;     // Kecepatan normal
-            utterance.pitch = 1.0;    // Nada normal
+            utterance.pitch = 1.0;    // Nada suara
 
-            // Coba pilih suara bahasa Indonesia jika tersedia di device
+            // Coba ambil suara bahasa Indonesia yang tersedia di device
             let voices = window.speechSynthesis.getVoices();
-            let idVoice = voices.find(v => v.lang === 'id-ID' || v.lang === 'id_ID' || v.lang.startsWith('id'));
-            if (idVoice) {
-                utterance.voice = idVoice;
+            let indoVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID') || v.name.toLowerCase().includes('indonesian'));
+            if (indoVoice) {
+                utterance.voice = indoVoice;
             }
 
             window.speechSynthesis.speak(utterance);
@@ -203,23 +183,23 @@
             input.value = '';
             box.scrollTop = box.scrollHeight;
 
-            let reply = "Perintah " + txt + " berhasil diproses.";
+            let reply = "Perintah " + txt + " diterima oleh sistem Engine Igor Labs.";
 
             setTimeout(() => {
                 box.innerHTML += `<div class="msg bot-msg">${reply}</div>`;
                 box.scrollTop = box.scrollHeight;
 
-                // Jika user belum klik tombol hijau, ingatkan
-                if (!audioUnlocked) {
-                    initAudio();
+                // Jika belum klik tombol aktifkan, panggil otomatis
+                if (!ttsReady) {
+                    initDeviceTTS();
                 }
 
-                // Ucapkan balasan secara otomatis
-                speakText(reply);
+                // Ucapkan menggunakan TTS bawaan device
+                speakDeviceTTS(reply);
             }, 300);
         }
 
-        // Preload voices
+        // Preload daftar suara device
         if ('speechSynthesis' in window) {
             window.speechSynthesis.onvoiceschanged = function() {
                 window.speechSynthesis.getVoices();
