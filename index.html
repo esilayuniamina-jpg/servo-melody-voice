@@ -8,7 +8,7 @@
         body {
             background-color: #050b14;
             color: #e2e8f0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: monospace;
             margin: 0;
             padding: 20px;
             display: flex;
@@ -19,151 +19,101 @@
         }
         h1 {
             color: #38bdf8;
-            margin-bottom: 5px;
+            font-size: 1.2rem;
             text-align: center;
-            font-size: 1.5rem;
         }
-        .subtitle {
-            color: #94a3b8;
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-        }
-        #chat-container {
+        #terminal {
             width: 100%;
             max-width: 600px;
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            height: 70vh;
-            overflow: hidden;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-        #chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .message {
-            padding: 10px 14px;
-            border-radius: 8px;
-            max-width: 80%;
-            line-height: 1.4;
-            font-size: 0.95rem;
-        }
-        .user-message {
-            background: #0284c7;
-            color: white;
-            align-self: flex-end;
-        }
-        .bot-message {
-            background: #1e293b;
-            color: #f8fafc;
-            align-self: flex-start;
-            border: 1px solid #334155;
-        }
-        #input-container {
-            display: flex;
-            padding: 12px;
-            background: #0b1329;
-            border-top: 1px solid #1e293b;
-            gap: 8px;
-        }
-        input[type="text"] {
-            flex: 1;
-            padding: 10px 14px;
+            background: #000;
+            border: 1px solid #38bdf8;
             border-radius: 6px;
-            border: 1px solid #334155;
-            background: #020617;
-            color: white;
-            outline: none;
-            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            height: 65vh;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
         }
-        input[type="text"]:focus {
-            border-color: #38bdf8;
+        .log {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .user { color: #4ade80; }
+        .bot { color: #38bdf8; }
+        #input-box {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            margin-top: 10px;
+            gap: 5px;
+        }
+        input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #38bdf8;
+            color: #fff;
+            padding: 10px;
+            font-family: monospace;
+            outline: none;
         }
         button {
-            padding: 10px 18px;
-            background: #0284c7;
-            color: white;
+            background: #38bdf8;
+            color: #000;
             border: none;
-            border-radius: 6px;
+            padding: 10px 15px;
+            font-weight: bold;
             cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background: #0369a1;
         }
     </style>
 </head>
 <body>
 
-    <h1>Engine Igor Labs Animatronic Puppet</h1>
-    <div class="subtitle">Servo Melody Controller & Assistant</div>
+    <h1>ENGINE IGOR LABS - TERMINAL VOICE</h1>
 
-    <div id="chat-container">
-        <div id="chat-messages">
-            <div class="message bot-message">Halo! Klik tombol Kirim atau ketik pesan untuk mulai tes suara.</div>
-        </div>
-        <div id="input-container">
-            <input type="text" id="user-input" placeholder="Ketik pesan..." onkeypress="handleKeyPress(event)">
-            <button onclick="kirimPesan()">Kirim</button>
-        </div>
+    <div id="terminal">
+        <div class="log bot">> Sistem siap. Ketik pesan atau perintah...</div>
+    </div>
+
+    <div id="input-box">
+        <input type="text" id="command" placeholder="Ketik perintah..." onkeydown="if(event.key==='Enter') kirim()">
+        <button onclick="kirim()">SEND</button>
     </div>
 
     <script>
-        // Menggunakan Audio API dari Google Translate (TTS URL langsung) yang pasti bunyi di semua browser HP!
-        function bersuaraGoogle(teks) {
-            try {
-                let encodedText = encodeURIComponent(teks);
-                // URL publik Google Translate TTS (gratis & langsung putar audio MP3)
-                let url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=id&client=tw-ob`;
-                let audio = new Audio(url);
-                audio.play().catch(e => console.log("Audio play error:", e));
-            } catch (err) {
-                console.log("TTS Error:", err);
-            }
-        }
+        // Menggunakan library responsivevoice.js (Versi lawas yang sangat stabil & terkenal langsung bunyi)
+        let scriptTag = document.createElement('script');
+        scriptTag.src = 'https://code.responsivevoice.org/responsivevoice.js?key=free';
+        document.head.appendChild(scriptTag);
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                kirimPesan();
-            }
-        }
+        function kirim() {
+            let input = document.getElementById('command');
+            let text = input.value.trim();
+            if(!text) return;
 
-        function kirimPesan() {
-            let inputField = document.getElementById('user-input');
-            let pesanUser = inputField.value.trim();
-            if (!pesanUser) return;
-
-            let chatMessages = document.getElementById('chat-messages');
-
-            // 1. Tampilkan pesan user
-            let userDiv = document.createElement('div');
-            userDiv.className = 'message user-message';
-            userDiv.textContent = pesanUser;
-            chatMessages.appendChild(userDiv);
-
-            inputField.value = '';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // 2. Respon bot
-            let responBot = "Perintah " + pesanUser + " diterima oleh sistem Engine Igor Labs.";
+            let term = document.getElementById('terminal');
             
-            let botDiv = document.createElement('div');
-            botDiv.className = 'message bot-message';
-            botDiv.textContent = responBot;
-            chatMessages.appendChild(botDiv);
-            
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Tampilkan pesan user
+            term.innerHTML += `<div class="log user">> ${text}</div>`;
+            input.value = '';
+            term.scrollTop = term.scrollHeight;
 
-            // 3. Putar suara pakai Google Translate TTS langsung!
-            bersuaraGoogle(responBot);
+            // Respon bot
+            let reply = "Menjalankan perintah " + text + " sekarang.";
+            setTimeout(() => {
+                term.innerHTML += `<div class="log bot">> ${reply}</div>`;
+                term.scrollTop = term.scrollHeight;
+
+                // Panggil ResponsiveVoice (Versi lawas, sangat andal di HP & PC)
+                if (typeof responsiveVoice !== 'undefined') {
+                    responsiveVoice.speak(reply, "Indonesian Female", {rate: 1.0});
+                } else {
+                    // Fallback ke Google TTS API lama kalau responsivevoice belum load
+                    let audio = new Audio("https://translate.google.com/translate_tts?ie=UTF-8&q=" + encodeURIComponent(reply) + "&tl=id&client=tw-ob");
+                    audio.play().catch(e => console.log(e));
+                }
+            }, 300);
         }
     </script>
 </body>
