@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engine Igor Labs Animatronic Puppet</title>
+    <style>
+        body {
+            background-color: #050b14;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 5px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        #chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            padding: 10px 14px;
+            border-radius: 8px;
+            max-width: 80%;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+        .user-message {
+            background: #0284c7;
+            color: white;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background: #1e293b;
+            color: #f8fafc;
+            align-self: flex-start;
+            border: 1px solid #334155;
+        }
+        #input-container {
+            display: flex;
+            padding: 12px;
+            background: #0b1329;
+            border-top: 1px solid #1e293b;
+            gap: 8px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #020617;
+            color: white;
+            outline: none;
+            font-size: 0.95rem;
+        }
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+        }
+        button {
+            padding: 10px 18px;
+            background: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0369a1;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Engine Igor Labs Animatronic Puppet</h1>
+    <div class="subtitle">Servo Melody Controller & Assistant</div>
+
+    <div id="chat-container">
+        <div id="chat-messages">
+            <div class="message bot-message">Halo! Saya asisten suara Engine Igor Labs. Ada yang bisa saya bantu terkait servo atau melodi hari ini?</div>
+        </div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Ketik pesan di sini..." onkeypress="handleKeyPress(event)">
+            <button onclick="kirimPesan()">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        // Fungsi Text-to-Speech (Browser Web Speech API)
+        function bersuara(teks) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Hentikan suara sebelumnya jika ada
+                let utterance = new SpeechSynthesisUtterance(teks);
+                utterance.lang = 'id-ID'; // Bahasa Indonesia
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Ucapkan sapaan awal saat halaman pertama kali dibuka (opsional/interaksi pertama)
+        window.onload = function() {
+            setTimeout(() => {
+                bersuara("Halo! Saya asisten suara Engine Igor Labs. Ada yang bisa saya bantu?");
+            }, 1000);
+        };
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                kirimPesan();
+            }
+        }
+
+        function kirimPesan() {
+            let inputField = document.getElementById('user-input');
+            let pesanUser = inputField.value.trim();
+            if (!pesanUser) return;
+
+            let chatMessages = document.getElementById('chat-messages');
+
+            // 1. Tampilkan pesan user
+            let userDiv = document.createElement('div');
+            userDiv.className = 'message user-message';
+            userDiv.textContent = pesanUser;
+            chatMessages.appendChild(userDiv);
+
+            inputField.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // 2. Simulasi respon bot berdasarkan input
+            setTimeout(() => {
+                let responBot = "Baik, saya akan memproses perintah untuk " + pesanUser + " sekarang.";
+                
+                let botDiv = document.createElement('div');
+                botDiv.className = 'message bot-message';
+                botDiv.textContent = responBot;
+                chatMessages.appendChild(botDiv);
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // 3. Panggil fungsi suara di background secara otomatis!
+                bersuara(responBot);
+            }, 500);
+        }
+    </script>
+</body>
+</html>
