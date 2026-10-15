@@ -108,43 +108,26 @@
 
     <div id="chat-container">
         <div id="chat-messages">
-            <div class="message bot-message">Halo! Saya asisten suara Engine Igor Labs. Ketik sesuatu untuk mulai mengobrol.</div>
+            <div class="message bot-message">Halo! Klik tombol Kirim atau ketik pesan untuk mulai tes suara.</div>
         </div>
         <div id="input-container">
-            <input type="text" id="user-input" placeholder="Ketik pesan di sini..." onkeypress="handleKeyPress(event)">
+            <input type="text" id="user-input" placeholder="Ketik pesan..." onkeypress="handleKeyPress(event)">
             <button onclick="kirimPesan()">Kirim</button>
         </div>
     </div>
 
     <script>
-        // Fungsi Text-to-Speech yang dipaksa aktif di browser mobile/desktop
-        function bersuara(teks) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                
-                let utterance = new SpeechSynthesisUtterance(teks);
-                utterance.lang = 'id-ID'; // Bahasa Indonesia
-                utterance.rate = 1.0;
-                utterance.pitch = 1.0;
-
-                // Pastikan voice Indonesia terpilih jika ada
-                let voices = window.speechSynthesis.getVoices();
-                let indoVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
-                if (indoVoice) {
-                    utterance.voice = indoVoice;
-                }
-
-                window.speechSynthesis.speak(utterance);
-            } else {
-                console.log("Browser tidak mendukung Speech Synthesis.");
+        // Menggunakan Audio API dari Google Translate (TTS URL langsung) yang pasti bunyi di semua browser HP!
+        function bersuaraGoogle(teks) {
+            try {
+                let encodedText = encodeURIComponent(teks);
+                // URL publik Google Translate TTS (gratis & langsung putar audio MP3)
+                let url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=id&client=tw-ob`;
+                let audio = new Audio(url);
+                audio.play().catch(e => console.log("Audio play error:", e));
+            } catch (err) {
+                console.log("TTS Error:", err);
             }
-        }
-
-        // Muat voices di awal (beberapa browser butuh event onvoiceschanged)
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.onvoiceschanged = function() {
-                window.speechSynthesis.getVoices();
-            };
         }
 
         function handleKeyPress(event) {
@@ -170,7 +153,7 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
             // 2. Respon bot
-            let responBot = "Baik, saya mengerti perintah " + pesanUser + ". Sistem servo dan melodi siap dijalankan.";
+            let responBot = "Perintah " + pesanUser + " diterima oleh sistem Engine Igor Labs.";
             
             let botDiv = document.createElement('div');
             botDiv.className = 'message bot-message';
@@ -179,8 +162,8 @@
             
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // 3. Panggil suara langsung di dalam fungsi klik user (agar lolos blokir browser)
-            bersuara(responBot);
+            // 3. Putar suara pakai Google Translate TTS langsung!
+            bersuaraGoogle(responBot);
         }
     </script>
 </body>
